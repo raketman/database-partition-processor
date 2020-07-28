@@ -9,40 +9,6 @@ use Raketman\DatabasePartitionProcessor\Exception\SchemaNotEqualException;
 
 class MysqlDbProcessor implements DbProcessorInterface
 {
-
-    protected $tables = [
-
-        'deleted_records' => [
-            'type'              => 'month',
-            'primary'           => ['id', 'date_of_removal'], // состав primary
-            'date_field'        => 'date_of_removal', // По какому поля строить партиции
-            'safe_periods'      => 5 // сколько периодов хранить
-        ],
-        'deleted_intervals' => [
-            'type'              => 'month',
-            'primary'           => ['id', 'delete_date'], // состав primary
-            'date_field'        => 'delete_date', // По какому поля строить партиции
-            'safe_periods'      => 5 // сколько периодов хранить
-        ],
-        'ticket_histories' => [
-            'type'              => 'month',
-            'primary'           => ['id', 'date'], // состав primary
-            'date_field'        => 'date', // По какому поля строить партиции
-            'safe_periods'      => 5 // сколько периодов хранить
-        ],
-        'logs' => [
-            'type'              => 'month',
-            'primary'           => ['id', 'date_created'], // состав primary
-            'date_field'        => 'date_created', // По какому поля строить партиции
-            'safe_periods'      => 5 // сколько периодов хранить
-        ],
-        'monitoring_logs' => [
-            'type'              => 'month',
-            'primary'           => ['id', 'datetime'], // состав primary
-            'date_field'        => 'datetime', // По какому поля строить партиции
-            'safe_periods'      => 5 // сколько периодов хранить
-        ],
-    ];
     use DateCalculatorTrait;
 
 
@@ -139,44 +105,24 @@ class MysqlDbProcessor implements DbProcessorInterface
         // Надо произвести реорганизацию таблиц
         if (!$notExists && $schemaEqual && (count($partitions) > 1)) {
             throw new SchemaEqualException('schema already equal');
-
         }
 
         $newPrimary = implode('`, `', $primaries);
         $this->pdo->exec("alter table {$partition->table} drop PRIMARY KEY, add primary key (`{$newPrimary}`);");
 
-        $compareFormat = 'Y-m-d';
         // Найдем партиции
         list($minDate, $maxDate) = $this->pdo->query("SELECT MIN({$partition->date_field}), MAX({$partition->date_field}) FROM {$partition->table}")->fetch(\PDO::FETCH_NUM);
-
-        print_r([$minDate, $maxDate]);exit;
 
         $minDate = new \DateTime($minDate);
         $maxDate = new \DateTime($maxDate);
 
         $maxDate = max($maxDate, new \DateTime());
 
-
-        $createPartitions = [];
-        while($minDate < $maxDate) {
-            $currenDate = (new DateTime($minDate))->add(new DateInterval('P1D'));
-            $minDate = $currenDate->format($compareFormat);
-
-            $createPartitions[$currenDate->format($format)] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
-                sprintf('p%s', $currenDate->format($format)),
-                $currenDate->format($format)
-            );
-        }
-
-        if (count($createPartitions) === 0) {
-            $currenDate = new \DateTime();
-            $createPartitions[] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
-                sprintf('p%s', $currenDate->format($format)),
-                $currenDate->format($format)
-            );
-        }
+        $createPartitions = $this->calculateIntervalByMinMax($partition, $minDate, $maxDate);
 
         $createPartitionSql = implode(",\n", $createPartitions);
+
+        $range = $this->getRange($partition);
 
         // Реорганизуем партиции
         $addPartitionSql = <<<SQL
