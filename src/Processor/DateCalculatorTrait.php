@@ -25,30 +25,41 @@ trait DateCalculatorTrait
         return $result;
     }
 
-    public function calculateInterval(RaketmanDatePartition $partition, $direction)
+    public function calculateInterval(RaketmanDatePartition $partition, \DateTime $startDate, $direction)
     {
-        switch ($partition->type) {
-            case DateType::MONTH:
-                $interval = '+%s %s';
-                $format = 'Ym';
-                $period = 'month';
-                $range = sprintf('(YEAR(%s) * 100 + MONTH(%s))', $partition->date_field, $partition->date_field);
-                $safePartitions = [];
+        $format = $this->getFormat($partition);
 
+        $result = [];
 
-                $safeInterval = '-%s day';
+        switch ($direction) {
+            case 'forward':
+                while(count($result) <= $partition->create_period) {
+                    $startDate->add(new \DateInterval('P1D'));
 
-                for ($i= 0; $i < $partition->safe_period * 31; $i++) {
-                    $key = date($format, strtotime(sprintf($safeInterval, $i, $period)));
+                    $result[$startDate->format($format)] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
+                        sprintf('p%s', $startDate->format($format)),
+                        $startDate->format($format)
+                    );
+                }
 
-                    $safePartitions[$key] = $key;
+                return $result;
+                break;
+            case 'back':
+
+                while(count($result) <= $partition->create_period) {
+                    $result[$startDate->format($format)] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
+                        sprintf('p%s', $startDate->format($format)),
+                        $startDate->format($format)
+                    );
+
+                    $startDate->sub(new \DateInterval('P1D'));
                 }
 
                 break;
-
-            default:
-                throw new \Exception('Unknown type: ' . $partition->type , 500);
         }
+
+
+        return $result;
     }
 
     protected function getRange(RaketmanDatePartition $partition)

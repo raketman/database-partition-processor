@@ -24,73 +24,64 @@ class MysqlDbProcessor implements DbProcessorInterface
             implode(';', explode('&', $databaseUrlParams['query']))
         );
 
+        // TODO: add pdo adapter to process error and throw exception
         $this->pdo = new \PDO($dsn, $databaseUrlParams['user'], $databaseUrlParams['pass']);
     }
 
     public function prolongate(RaketmanDatePartition $partition)
     {
-        $dateField = $partition->date_field;
-        $table = $partition->table;
-
-        $this->calculateInterval($partition, 'forward');
-
-        list($notExists, $schemaEqual, $partitions) = $this->checkSchemaEqual($partition);
+        list($notExists, $schemaEqual, $partitionSources) = $this->checkSchemaEqual($partition);
 
         if ($notExists || !$schemaEqual) {
             throw new SchemaNotEqualException("primary id not equal to schema", 500);
         }
 
-        // Надо произвести реорганизацию таблиц
-        if (0 === count($partitions)) {
+        if (2 > count($partitionSources)) {
             throw new PartitionNotFoundException("dont have create partition", 500);
         }
 
+        $last = array_pop($partitionSources);
 
-        //TODO: читаем схему, разбираем как созданы
+        if ($last['PARTITION_NAME'] !== 'pmaxval') {
+            throw new PartitionNotFoundException("dont have pmaxval partition", 500);
+        }
+
+
+        $createIntervals = $this->calculateInterval($partition, new \DateTime(), 'forward');
+        $safeIntervals = $this->calculateInterval($partition, new \DateTime(),'back');
 
         $partitions = [];
         foreach ($partitionSources as $partitionSource) {
             $partitions[$partitionSource['PARTITION_DESCRIPTION']] = $partitionSource;
         }
 
-        // Построим партиции для проверки
-        $currentPartition = date($format, strtotime(sprintf($interval, '1', $period)));
-        // Пробуем создать следующую партицию
-        $plus1Partition = date($format, strtotime(sprintf($interval, '2', $period)));
-        $plus2Partition = date($format, strtotime(sprintf($interval, '3', $period)));
-
-        $checkPartitions = [$currentPartition, $plus1Partition, $plus2Partition];
         // Если ее еще нет
-        foreach ($checkPartitions as $partition) {
-            if (!$partitions[$partition]) {
+        foreach ($createIntervals as $partitionKey => $partitionItem) {
+            if (!$partitions[$partitionKey]) {
                 // Выполним запрос
-                $Con->ezQuery(sprintf(
-                    "ALTER TABLE  {$table}  REORGANIZE PARTITION pmaxval INTO(PARTITION %s VALUES LESS THAN (%s), PARTITION pmaxval VALUES LESS THAN MAXVALUE )",
-                    sprintf('p%s', $partition),
-                    $partition
+                $this->pdo->query(sprintf(
+                    "ALTER TABLE  {$partition->table}  REORGANIZE PARTITION pmaxval INTO(PARTITION %s VALUES LESS THAN (%s), PARTITION pmaxval VALUES LESS THAN MAXVALUE )",
+                    sprintf('p%s', $partitionKey),
+                    $partitionKey
                 ));
 
-                unset($partitions[$partition]);
+                unset($partitions[$partitionKey]);
             }
         }
 
         // Удалим ненужные
-        foreach ($partitions as $partition => $info) {
-            if (in_array($partition ,['MAXVALUE', 'pmaxval'])) {
+        foreach ($partitions as $partitionKey => $info) {
+            if (array_key_exists($partitionKey, $createIntervals)) {
                 continue;
             }
 
-            if (in_array($partition, $checkPartitions)) {
+            if (array_key_exists($partitionKey, $safeIntervals)) {
                 continue;
             }
 
-            if (in_array($partition, $safePartitions)) {
-                continue;
-            }
-
-            $Con->ezQuery(sprintf(
-                "ALTER TABLE {$table} DROP PARTITION %s;",
-                sprintf('p%s' , $partition)
+            $this->pdo->query(sprintf(
+                "ALTER TABLE {$partition->table} DROP PARTITION %s;",
+                sprintf('p%s' , $partitionKey)
             ));
         }
     }
