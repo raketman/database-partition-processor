@@ -1,0 +1,23 @@
+{
+    "name": "raketman/database-partition-processor",
+    "version": "1.0.0",
+    "description": "This package provides a way to auto create partition",
+    "keywords": ["database","partition"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nikita Shamseev",
+            "email": "raketmandeveloper@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.6",
+        "ext-pdo": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Raketman\\DatabasePartitionProcessor\\": "src/"
+        }
+    }
+}
