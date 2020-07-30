@@ -26,6 +26,4 @@ $processor = (new \Raketman\DatabasePartitionProcessor\Processor\ProcessorFactor
 
 $processor->create($object);
 
-//$processor->prolongate($object);
-
 ?>

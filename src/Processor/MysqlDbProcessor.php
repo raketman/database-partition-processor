@@ -2,6 +2,7 @@
 
 namespace Raketman\DatabasePartitionProcessor\Processor;
 
+use Raketman\DatabasePartitionProcessor\Adapter\PdoAdapter;
 use Raketman\DatabasePartitionProcessor\Annotation\RaketmanDatePartition;
 use Raketman\DatabasePartitionProcessor\Exception\PartitionNotFoundException;
 use Raketman\DatabasePartitionProcessor\Exception\SchemaEqualException;
@@ -12,7 +13,7 @@ class MysqlDbProcessor implements DbProcessorInterface
     use DateCalculatorTrait;
 
 
-    /** @var \PDO  */
+    /** @var PdoAdapter  */
     protected $pdo;
 
     public function __construct($databaseUrlParams)
@@ -25,7 +26,7 @@ class MysqlDbProcessor implements DbProcessorInterface
         );
 
         // TODO: add pdo adapter to process error and throw exception
-        $this->pdo = new \PDO($dsn, $databaseUrlParams['user'], $databaseUrlParams['pass']);
+        $this->pdo = new PdoAdapter($dsn, $databaseUrlParams['user'], $databaseUrlParams['pass']);
     }
 
     public function prolongate(RaketmanDatePartition $partition)
@@ -57,7 +58,7 @@ class MysqlDbProcessor implements DbProcessorInterface
 
         // Если ее еще нет
         foreach ($createIntervals as $partitionKey => $partitionItem) {
-            if (!$partitions[$partitionKey]) {
+            if (!array_key_exists($partitionKey, $partitions)) {
                 // Выполним запрос
                 $this->pdo->query(sprintf(
                     "ALTER TABLE  {$partition->table}  REORGANIZE PARTITION pmaxval INTO(PARTITION %s VALUES LESS THAN (%s), PARTITION pmaxval VALUES LESS THAN MAXVALUE )",
@@ -131,7 +132,7 @@ SQL;
     protected function checkSchemaEqual(RaketmanDatePartition $partition)
     {
         // Проверим таблицу на совпадение id
-        $primaries = $this->pdo->query("SHOW KEYS FROM {$partition->table} WHERE Key_name = 'PRIMARY'");//->fetch(\PDO::FETCH_OBJ);
+        $primaries = $this->pdo->query("SHOW KEYS FROM {$partition->table} WHERE Key_name = 'PRIMARY'");
 
         $checkColumns = [$partition->id_field, $partition->date_field];
         $notExists = false;
