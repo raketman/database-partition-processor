@@ -39,7 +39,9 @@ manual - (true|false), if true, to process this need to use --table options in s
 ```
 
 
-To process partition you need to run command:
+To process partition you need to run command.
+This command add|delete partition based options in RaketmanDatePartition.
+Need to work periodically, for example in cron.
 
 ```
 php vendor/raketman/database-partition-processor/bin/process.php  --table=* --database-url=* --dirs=* --env-database-url=*
@@ -51,7 +53,9 @@ php vendor/raketman/database-partition-processor/bin/process.php  --table=* --da
 
 ```
 
-To create partition you need to run command:
+To create partition you need to run command.
+This command create partition definition based options in RaketmanDatePartition.
+Run only one time for each table, that you want partitionated.
 
 ```
 create partition in manual mode, only one table for one run.
