@@ -1,14 +1,14 @@
 {
     "name": "raketman/database-partition-processor",
     "version": "1.0.0",
-    "description": "This package provides a way to auto create partition",
+    "description": "This package provides a way to auto create|delete partition",
     "keywords": ["database","partition"],
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Nikita Shamseev",
-            "email": "raketmandeveloper@gmail.com"
+            "name": "Raketman",
+            "email": "raketmandevelop@gmail.com"
         }
     ],
     "require": {
