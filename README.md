@@ -1,7 +1,7 @@
  RaketmanDatabasePartitionProcessor
 ==========================
 
-This library provides a way to auto create partition, which base of date field
+This library provides a way to auto create|delete partition, which base of date field
 
 
 ```
