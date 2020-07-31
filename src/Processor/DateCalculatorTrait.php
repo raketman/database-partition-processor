@@ -33,7 +33,7 @@ trait DateCalculatorTrait
 
         switch ($direction) {
             case 'forward':
-                while(count($result) <= $partition->create_period) {
+                while(count($result) < $partition->create_period) {
                     $startDate->add(new \DateInterval('P1D'));
 
                     $result[$startDate->format($format)] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
@@ -46,7 +46,7 @@ trait DateCalculatorTrait
                 break;
             case 'back':
 
-                while(count($result) <= $partition->create_period) {
+                while(count($result) < $partition->safe_period) {
                     $result[$startDate->format($format)] = sprintf('PARTITION %s VALUES LESS THAN (%s)',
                         sprintf('p%s', $startDate->format($format)),
                         $startDate->format($format)

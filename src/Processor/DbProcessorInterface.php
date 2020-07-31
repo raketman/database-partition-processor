@@ -12,7 +12,7 @@ interface DbProcessorInterface
      * @param RaketmanDatePartition $partition
      * @return mixed
      */
-    public function prolongate(RaketmanDatePartition $partition);
+    public function process(RaketmanDatePartition $partition);
 
     /**
      * Создание партиций

@@ -25,11 +25,10 @@ class MysqlDbProcessor implements DbProcessorInterface
             implode(';', explode('&', $databaseUrlParams['query']))
         );
 
-        // TODO: add pdo adapter to process error and throw exception
         $this->pdo = new PdoAdapter($dsn, $databaseUrlParams['user'], $databaseUrlParams['pass']);
     }
 
-    public function prolongate(RaketmanDatePartition $partition)
+    public function process(RaketmanDatePartition $partition)
     {
         list($notExists, $schemaEqual, $partitionSources) = $this->checkSchemaEqual($partition);
 
@@ -70,20 +69,22 @@ class MysqlDbProcessor implements DbProcessorInterface
             }
         }
 
-        // Удалим ненужные
-        foreach ($partitions as $partitionKey => $info) {
-            if (array_key_exists($partitionKey, $createIntervals)) {
-                continue;
-            }
+        if ($partition->isNeedDelete()) {
+            // Удалим ненужные
+            foreach ($partitions as $partitionKey => $info) {
+                if (array_key_exists($partitionKey, $createIntervals)) {
+                    continue;
+                }
 
-            if (array_key_exists($partitionKey, $safeIntervals)) {
-                continue;
-            }
+                if (array_key_exists($partitionKey, $safeIntervals)) {
+                    continue;
+                }
 
-            $this->pdo->query(sprintf(
-                "ALTER TABLE {$partition->table} DROP PARTITION %s;",
-                sprintf('p%s' , $partitionKey)
-            ));
+                $this->pdo->query(sprintf(
+                    "ALTER TABLE {$partition->table} DROP PARTITION %s;",
+                    sprintf('p%s' , $partitionKey)
+                ));
+            }
         }
     }
 

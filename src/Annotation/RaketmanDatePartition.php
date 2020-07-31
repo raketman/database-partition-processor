@@ -58,4 +58,9 @@ class RaketmanDatePartition
     {
         return $this->manual === 'true';
     }
+
+    public function isNeedDelete()
+    {
+        return $this->safe_period !== 'null';
+    }
 }

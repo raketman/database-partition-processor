@@ -19,7 +19,6 @@ This library provides a way to auto create partition, which base of date field
  * )
  */
 
-
 if you use doctrine/annotation add @IgnoreAnnotation("RaketmanDatePartition")
 
 ```
@@ -32,7 +31,7 @@ table - table name fron db
 type - type of partition (day|month|year)
 id_field - name if id field
 date_field -name of date field, which use in partition definition
-safe_period - count of past period, than could,t be deleted
+safe_period - count of past period, than could,t be deleted, if null - partition not be deleted
 create_period - count of future period, than be created
 manual - (true|false), if true, to process this need to use --table options in script
 ```
@@ -41,7 +40,7 @@ manual - (true|false), if true, to process this need to use --table options in s
 To process partition you need to run command:
 
 ```
-php vendor/raketman/database-partition-processor/bin/prolongate.php  --table=* --database-url=* --dirs=* --env-database-url=*
+php vendor/raketman/database-partition-processor/bin/process.php  --table=* --database-url=* --dirs=* --env-database-url=*
 
 --dirs - dirs to scan RaketmanDatePartition (defaut src) (not required)
 --database-url - url to connect, example mysql://db_user:db_password@127.0.0.1:3306/db_name (required one of url)
