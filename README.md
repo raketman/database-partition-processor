@@ -46,7 +46,7 @@ Need to work periodically, for example in cron.
 ```
 php vendor/raketman/database-partition-processor/bin/process.php  --table=* --database-url=* --locate-dirs=* --env-database-url=*
 
--locate-dirs - dirs to scan RaketmanDatePartition (defaut src) (not required)
+--locate-dirs - dirs to scan RaketmanDatePartition (defaut src) (not required)
 --database-url - url to connect, example mysql://db_user:db_password@127.0.0.1:3306/db_name (required one of url)
 --env-database-url - env, who contain database-url (required one of url)
 --table - table name to manual process (not required)
